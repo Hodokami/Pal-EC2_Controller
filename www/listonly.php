@@ -1,6 +1,6 @@
 <?php
-require_once('palrcon.php');
-require_once('../../rconauth.php');
+require_once('../PalRcon/src/Rcon.php');
+require_once('../rconauth.php');
 use Thedudeguy\Rcon;
 $rcon = new Rcon($host, $port, $password, $timeout);
 if ($rcon->connect())
