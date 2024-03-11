@@ -1,8 +1,11 @@
 <?php
-require_once('../PalRcon/src/Rcon.php');
-require_once('../rconauth.php');
+require_once '../rconauth.php';
+require '../PalRcon/src/Rcon.php';
 use Thedudeguy\Rcon;
+require '../AWS/aws.phar';
+
 $rcon = new Rcon($host, $port, $password, $timeout);
+
 if ($rcon->connect())
 {
 	$info = $rcon->sendCommand("info");
