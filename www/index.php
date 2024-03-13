@@ -3,11 +3,11 @@ session_start();
 
 require_once __DIR__.'/../auth.php';
 
-require __DIR__.'/../PalRcon/src/Rcon.php';
+require_once __DIR__.'/../PalRcon/src/Rcon.php';
 use Thedudeguy\Rcon;
 $rcon = new Rcon($host, $port, $password, $timeout);
 
-require __DIR__.'/../AWS/aws.phar';
+require_once __DIR__.'/../AWS/aws.phar';
 use Aws\Ec2\Ec2Client;
 $ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-15', 'profile' => 'default']);
 
@@ -23,21 +23,18 @@ function post2discord($post, $url)
 }
 
 if(isset($_SESSION['loggedin'])) { if($_SESSION['loggedin'] === true) { $status = 'Logged in!'; } else { $status = 'Not logged in.'; } } else { $status = 'No status.'; }
+if(isset($_SESSION['timeunlock'])) { if($_SESSION['timeunlock'] <= time()) { $locked = false; } else { $locked = true; }} else { $locked = false; }
 
 if(array_key_exists('sendpw', $_POST))
 {
-	$sentpw = true;
-	if(!isset($_SESSION['sendcount']))
+	if($locked === false)
 	{
-		$_SESSION['sendcount'] = 1;
-	}
-	if(0 <= ++$_SESSION['sendcount'] && $_SESSION['sendcount'] <= 6) // 連打対策
-	{
+		$_SESSION['timeunlock'] = time() + 10;
 		$_SESSION['password'] = bin2hex(random_bytes(12));
 		$message = json_encode(array('username' => 'Login Password', 'content' => $_SESSION['password']));
 		post2discord($message, $webhook);
-		header('Location:' . $_SERVER['PHP_SELF']);
 	}
+	header('Location:' . $_SERVER['PHP_SELF']);
 }
 
 if(array_key_exists('login', $_POST))
@@ -68,57 +65,24 @@ if(!isset($state)){echo 'AWS API Error.';}
 
 if(array_key_exists('start', $_POST))
 {
-	if(isset($_SESSION['loggedin']))
-	{
-		if($_SESSION['loggedin'] === true && $state === 'stopped')
-		{
-			$result = $ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
-		}
-	}
-	sleep(5);
+	exec('php '.__DIR__.'/serverctrl.php start >/dev/null 2>&1 &');
 	header('Location:' . $_SERVER['PHP_SELF']);
 }
 
 if(array_key_exists('stop', $_POST))
 {
-	if(isset($_SESSION['loggedin']))
-	{
-		if($_SESSION['loggedin'] === true)
-		{
-			if ($rcon->connect())
-			{
-				$rcon->sendCommand("save");
-				sleep(20);
-				$rcon->sendCommand("shutdown 30 Server_will_close_after_30s.");
-				$rcon->disconnect();
-				sleep(60);
-				$result = $ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
-			}
-			else
-			{
-				echo '<script>alert("RCON Timeout.")</script>';
-				$rcon->disconnect();
-			}
-		}
-	}
-	sleep(40);
+	exec('php '.__DIR__.'/serverctrl.php stop >/dev/null 2>&1 &');
 	header('Location:' . $_SERVER['PHP_SELF']);
 }
 
 if(array_key_exists('frestart', $_POST))
 {
-	if(isset($_SESSION['loggedin']))
-	{
-		if($_SESSION['loggedin'] === true)
-		{
-			$result = $ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
-		}
-	}
-	sleep(5);
+	exec('php '.__DIR__.'/serverctrl.php frestart >/dev/null 2>&1 &');
 	header('Location:' . $_SERVER['PHP_SELF']);
 }
 
-if($state === 'running'){ // Get Players List
+if($state === 'running' && $locked === false) // Get Players List
+{
 	if (@$rcon->connect())
 	{
 		$info = $rcon->sendCommand("info");
@@ -128,7 +92,7 @@ if($state === 'running'){ // Get Players List
 	}
 	else
 	{
-		echo "Timeout.";
+		$players = array('ignore', 'Timeout.');
 		$rcon->disconnect();
 	}
 }
@@ -142,18 +106,18 @@ if($state === 'running'){ // Get Players List
 	<body>
 		<p>Your status: <?php echo $status;?></p>
 		<form method = "POST">
-			<p><input type="submit" name="sendpw" class="button" value="Send password"></p>
+			<p><input type="submit" name="sendpw" class="button" value="Send password" <?php if($locked === true) { echo 'disabled'; }?>></p>
 		</form>
 		<form method = "POST">
 			<p>Password: <input type="text" name="password" class="pwform"><input type="submit" name="login" class="button" value="Login"></p>
 		</form>
 		<p>
-			<form method = "POST"><input type="submit" name="start" class="button" value="Start Server" <?php if($state !== 'stopped') { echo 'disabled'; }?>></form>
-			<form method = "POST"><input type="submit" name="stop" class="button" value="Stop Server" <?php if($state !== 'running') { echo 'disabled'; }?>></form>
+			<form method = "POST"><input type="submit" name="start" class="button" value="Start Server" <?php if($state !== 'stopped' || $locked === true) { echo 'disabled'; }?>></form>
+			<form method = "POST"><input type="submit" name="stop" class="button" value="Stop Server" <?php if($state !== 'running' || $locked === true) { echo 'disabled'; }?>></form>
 			<form method = "POST"><input type="submit" name="frestart" class="button" value="&quot;FORCE&quot; Restart Server"></form>
 		</p>
 		<?php
-		if($state === 'running'){
+		if($state === 'running' && $locked === false){
 			echo '<p>'.$info.'</p>';
 			echo '<p>Online Players:<br>';
 			foreach($players as $key => $value)
