@@ -26,6 +26,7 @@ if(isset($_SESSION['loggedin'])) { if($_SESSION['loggedin'] === true) { $status 
 
 if(array_key_exists('sendpw', $_POST))
 {
+	$sentpw = true;
 	if(!isset($_SESSION['sendcount']))
 	{
 		$_SESSION['sendcount'] = 1;
@@ -62,10 +63,62 @@ if(array_key_exists('login', $_POST))
 }
 
 $result = $ec2Client -> describeInstanceStatus(['IncludeAllInstances' => true, 'InstanceIds' => $instanceIds,]);
-echo $result;
 $state = $result['InstanceStatuses'][0]['InstanceState']['Name'];
-echo $state;
-if($state == 'running'){
+if(!isset($state)){echo 'AWS API Error.';}
+
+if(array_key_exists('start', $_POST))
+{
+	if(isset($_SESSION['loggedin']))
+	{
+		if($_SESSION['loggedin'] === true && $state === 'stopped')
+		{
+			$result = $ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
+		}
+	}
+	sleep(5);
+	header('Location:' . $_SERVER['PHP_SELF']);
+}
+
+if(array_key_exists('stop', $_POST))
+{
+	if(isset($_SESSION['loggedin']))
+	{
+		if($_SESSION['loggedin'] === true)
+		{
+			if ($rcon->connect())
+			{
+				$rcon->sendCommand("save");
+				sleep(20);
+				$rcon->sendCommand("shutdown 30 Server_will_close_after_30s.");
+				$rcon->disconnect();
+				sleep(60);
+				$result = $ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
+			}
+			else
+			{
+				echo '<script>alert("RCON Timeout.")</script>';
+				$rcon->disconnect();
+			}
+		}
+	}
+	sleep(40);
+	header('Location:' . $_SERVER['PHP_SELF']);
+}
+
+if(array_key_exists('frestart', $_POST))
+{
+	if(isset($_SESSION['loggedin']))
+	{
+		if($_SESSION['loggedin'] === true)
+		{
+			$result = $ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
+		}
+	}
+	sleep(5);
+	header('Location:' . $_SERVER['PHP_SELF']);
+}
+
+if($state === 'running'){
 	if ($rcon->connect())
 	{
 		$info = $rcon->sendCommand("info");
@@ -92,10 +145,15 @@ if($state == 'running'){
 			<p><input type="submit" name="sendpw" class="button" value="Send password"></p>
 		</form>
 		<form method = "POST">
-			<p>Password:<input type="text" name="password" class="pwform"><input type="submit" name="login" class="button" value="Login"></p>
+			<p>Password: <input type="text" name="password" class="pwform"><input type="submit" name="login" class="button" value="Login"></p>
 		</form>
+		<p>
+			<form method = "POST"><input type="submit" name="start" class="button" value="Start Server" <?php if($state !== 'stopped') { echo 'disabled'; }?>></form>
+			<form method = "POST"><input type="submit" name="stop" class="button" value="Stop Server" <?php if($state !== 'running') { echo 'disabled'; }?>></form>
+			<form method = "POST"><input type="submit" name="frestart" class="button" value="&quot;FORCE&quot; Restart Server"></form>
+		</p>
 		<?php
-		if($state == 'running'){
+		if($state === 'running'){
 			echo '<p>'.$info.'</p>';
 			echo '<p>Online Players:<br>';
 			foreach($players as $key => $value)
