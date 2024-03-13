@@ -118,8 +118,8 @@ if(array_key_exists('frestart', $_POST))
 	header('Location:' . $_SERVER['PHP_SELF']);
 }
 
-if($state === 'running'){
-	if ($rcon->connect())
+if($state === 'running'){ // Get Players List
+	if (@$rcon->connect())
 	{
 		$info = $rcon->sendCommand("info");
 		$playersraw = $rcon->sendCommand("showplayers");
