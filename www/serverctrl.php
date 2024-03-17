@@ -1,6 +1,4 @@
 <?php
-session_start();
-
 require_once __DIR__.'/../auth.php';
 
 require_once __DIR__.'/../PalRcon/src/Rcon.php';
@@ -13,48 +11,27 @@ $ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-1
 
 if($argv[1] === 'start')
 {
-    if(isset($_SESSION['loggedin']))
-	{
-		if($_SESSION['loggedin'] === true && $state === 'stopped')
-		{
-            $_SESSION['timeunlock'] = time() + 180;
-			$ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
-		}
-	}
+	$ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
 }
 
 if($argv[1] === 'stop')
 {
-    if(isset($_SESSION['loggedin']))
+	if ($rcon->connect())
 	{
-		if($_SESSION['loggedin'] === true)
-		{
-            $_SESSION['timeunlock'] = time() + 180;
-			if ($rcon->connect())
-			{
-				$rcon->sendCommand("save");
-				sleep(20);
-				$rcon->sendCommand("shutdown 60 Server_will_close_after_1min.");
-				$rcon->disconnect();
-				sleep(120);
-				$ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
-			}
-			else
-			{
-				$rcon->disconnect();
-			}
-		}
+		$rcon->sendCommand("save");
+		sleep(20);
+		$rcon->sendCommand("shutdown 60 Server_will_close_after_1min.");
+		$rcon->disconnect();
+		sleep(120);
+		$ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
+	}
+	else
+	{
+		$rcon->disconnect();
 	}
 }
 
 if($argv[1] === 'frestart')
 {
-    if(isset($_SESSION['loggedin']))
-	{
-		if($_SESSION['loggedin'] === true)
-		{
-            $_SESSION['timeunlock'] = time() + 180;
-			$ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
-		}
-	}
+	$ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
 }
