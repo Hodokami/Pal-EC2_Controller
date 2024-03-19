@@ -5,12 +5,69 @@ if(isset($_GET['cache'])) { if($_GET['cache'] !== 'false') { header('Location:'.
 
 // Set Cookie lifetime and params.
 // REF https://www.php.net/manual/ja/features.session.security.management.php https://www.php.net/manual/ja/function.session-regenerate-id.php
-$lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
-session_set_cookie_params($lifetime_or_options);
-session_start();
 function enhanced_session_start()
 {
-	if()
+	session_start();
+	if(isset($_SESSION['destroyed']))
+	{
+		if($_SESSION['destroyed'] <= time())
+		{
+			if(isset($_SESSION['loggedin'])) { unset($_SESSION['loggedin']); }
+			if(isset($_SESSION['password'])) { unset($_SESSION['password']); }
+		}
+		if(isset($_SESSION['new_session_id']))
+		{
+			session_write_close();
+			session_id($_SESSION['new_session_id']);
+			session_start();
+			return;
+		}
+	}
+}
+function enhanced_session_regenerate_id()
+{
+	$new_session_id = session_create_id();
+	$_SESSION['new_session_id'] = $new_session_id;
+	$_SESSION['destroyed'] = time() + 180;
+	session_write_close();
+	session_id($new_session_id);
+	ini_set('session.use_strict_mode', 0);
+	session_start();
+	ini_set('session.use_strict_mode', 1);
+	unset($_SESSION['destroyed']);
+	unset($_SESSION['new_session_id']);
+}
+$lifetime_or_options = ['lifetime' => 3600, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'httponly' => true];
+session_set_cookie_params($lifetime_or_options);
+ini_set('session.use_strict_mode', 1);
+enhanced_session_start();
+if(isset($_SESSION['idexpired'])) // generate new session id every 15mins
+{
+	if($_SESSION['idexpired'] <= time())
+	{
+		enhanced_session_regenerate_id();
+		$_SESSION['idexpired'] = time() + 900;
+	}
+}
+else
+{
+	$_SESSION['idexpired'] = time() + 900;
+}
+if(isset($_SESSION['stexpired'])) // status reset every 30mins
+{
+	if($_SESSION['stexpired'] <= time())
+	{
+		if(isset($_SESSION['loggedin'])) { unset($_SESSION['loggedin']); }
+		if(isset($_SESSION['password'])) { unset($_SESSION['password']); }
+	}
+	else
+	{
+		$_SESSION['stexpired'] = time() + 1800;
+	}
+}
+else
+{
+	$_SESSION['stexpired'] = time() + 1800;
 }
 
 require_once __DIR__.'/../auth.php'; // Params for RCON, AWS, and Discord.
