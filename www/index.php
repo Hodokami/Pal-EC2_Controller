@@ -1,33 +1,26 @@
 <?php
-// やりたいこと
-// セッション有効期限
+// Set query params for avoid KUSANAGI fcache.
 $selfurl = htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8').'?cache=false';
-if(isset($_GET['cache'])) // Avoid KUSANAGI fcache
-{
-	if($_GET['cache'] !== 'false')
-	{
-		header('Location:'.$selfurl);
-	}
-}
-else
-{
-	header('Location:'.$selfurl);
-}
-$lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
-$testparam = session_set_cookie_params($lifetime_or_options);
-session_start();
-echo $testparam;
-require_once __DIR__.'/../auth.php';
+if(isset($_GET['cache'])) { if($_GET['cache'] !== 'false') { header('Location:'.$selfurl); } }else { header('Location:'.$selfurl); }
 
+// Set Cookie lifetime and params.
+$lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
+session_set_cookie_params($lifetime_or_options);
+session_start();
+
+require_once __DIR__.'/../auth.php'; // Params for RCON, AWS, and Discord.
+
+// RCON Library by https://github.com/thedudeguy/PHP-Minecraft-Rcon
 require_once __DIR__.'/../PalRcon/src/Rcon.php';
 use Thedudeguy\Rcon;
 $rcon = new Rcon($host, $port, $password, $timeout);
 
+// AWS SDK for PHP Version 3.301.2
 require_once __DIR__.'/../AWS/aws.phar';
 use Aws\Ec2\Ec2Client;
 $ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-15', 'profile' => 'default']);
 
-function post2discord($post, $url)
+function post2discord($post, $url) // Post to Discord Werhook
 {
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -38,7 +31,7 @@ function post2discord($post, $url)
 	curl_close($ch);
 }
 
-if(isset($_SESSION['loggedin'])) { if($_SESSION['loggedin'] === true) { $status = 'Logged in!'; } else { $status = 'Not logged in.'; } } else { $status = 'No status.'; }
+if(isset($_SESSION['loggedin'])) { if($_SESSION['loggedin'] === true) { $status = 'Logged in'; } else { $status = 'Not logged in'; } } else { $status = 'No status'; }
 if(isset($_SESSION['timeunlock'])) { if($_SESSION['timeunlock'] <= time()) { $locked = false; } else { $locked = true; }} else { $locked = false; }
 
 if($locked === false) // Get EC2 Instance State
@@ -52,9 +45,9 @@ else
 	$state = 'locked';
 }
 
-if($state === 'running' && $locked === false) // Get Players List
+if($state === 'running' && $locked === false) // Get Palworld players list
 {
-	if (@$rcon->connect())
+	if (@$rcon->connect()) // not Display fsock ERROR
 	{
 		$info = $rcon->sendCommand("info");
 		$playersraw = $rcon->sendCommand("showplayers");
@@ -68,7 +61,7 @@ if($state === 'running' && $locked === false) // Get Players List
 	}
 }
 
-if(array_key_exists('sendpw', $_POST))
+if(array_key_exists('sendpw', $_POST)) // Send Login Password to Discord
 {
 	if($locked === false)
 	{
@@ -80,9 +73,9 @@ if(array_key_exists('sendpw', $_POST))
 	header('Location:'.$selfurl);
 }
 
-if(array_key_exists('login', $_POST))
+if(array_key_exists('login', $_POST)) // Check Password and Login
 {
-	$gotpw = htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8'); // XSS対策
+	$gotpw = htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8'); // escape
 	if(isset($_SESSION['password']))
 	{
 		if($_SESSION['password'] === $gotpw)
@@ -92,7 +85,7 @@ if(array_key_exists('login', $_POST))
 		}
 		else
 		{
-			session_unset(); // passwordが間違った時点ですべてリセット
+			session_unset(); // session all reset if wrong password
 		}
 		header('Location:'.$selfurl);
 	}
@@ -103,7 +96,7 @@ if(array_key_exists('login', $_POST))
 	}
 }
 
-if(array_key_exists('start', $_POST))
+if(array_key_exists('start', $_POST)) // Start EC2 Instance
 {
 	if(isset($_SESSION['loggedin']))
 	{
@@ -117,7 +110,7 @@ if(array_key_exists('start', $_POST))
 	header('Location:'.$selfurl);
 }
 
-if(array_key_exists('stop', $_POST))
+if(array_key_exists('stop', $_POST)) // Save and Exit Palworld server, and stop EC2 Instance
 {
 	if(isset($_SESSION['loggedin']))
 	{
@@ -131,7 +124,7 @@ if(array_key_exists('stop', $_POST))
 	header('Location:'.$selfurl);
 }
 
-if(array_key_exists('frestart', $_POST))
+if(array_key_exists('frestart', $_POST)) // Restart EC2 Instance
 {
 	if(isset($_SESSION['loggedin']))
 	{
