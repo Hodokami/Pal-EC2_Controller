@@ -8,6 +8,10 @@ if(isset($_GET['cache'])) { if($_GET['cache'] !== 'false') { header('Location:'.
 $lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
 session_set_cookie_params($lifetime_or_options);
 session_start();
+function enhanced_session_start()
+{
+	if()
+}
 
 require_once __DIR__.'/../auth.php'; // Params for RCON, AWS, and Discord.
 
