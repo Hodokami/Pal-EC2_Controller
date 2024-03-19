@@ -12,6 +12,8 @@ else
 {
 	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
 }
+
+session_set_cookie_params(900);
 session_start();
 
 require_once __DIR__.'/../auth.php';
