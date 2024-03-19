@@ -1,5 +1,4 @@
 <?php
-header('HTTP', true, 403); // Forbidden direct access
 require_once __DIR__.'/../auth.php';
 
 require_once __DIR__.'/../PalRcon/src/Rcon.php';
@@ -9,30 +8,36 @@ $rcon = new Rcon($host, $port, $password, $timeout);
 require_once __DIR__.'/../AWS/aws.phar';
 use Aws\Ec2\Ec2Client;
 $ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-15', 'profile' => 'default']);
-
-if($argv[1] === 'start')
+if(isset($argv))
 {
-	$ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
-}
-
-if($argv[1] === 'stop')
-{
-	if ($rcon->connect())
+	if($argv[1] === 'start')
 	{
-		$rcon->sendCommand("save");
-		sleep(20);
-		$rcon->sendCommand("shutdown 60 Server_will_close_after_1min.");
-		$rcon->disconnect();
-		sleep(120);
-		$ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
+		$ec2Client -> startInstances(['InstanceIds' => $instanceIds,]);
 	}
-	else
+
+	if($argv[1] === 'stop')
 	{
-		$rcon->disconnect();
+		if ($rcon->connect())
+		{
+			$rcon->sendCommand("save");
+			sleep(20);
+			$rcon->sendCommand("shutdown 60 Server_will_close_after_1min.");
+			$rcon->disconnect();
+			sleep(120);
+			$ec2Client -> stopInstances(['InstanceIds' => $instanceIds,]);
+		}
+		else
+		{
+			$rcon->disconnect();
+		}
+	}
+
+	if($argv[1] === 'frestart')
+	{
+		$ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
 	}
 }
-
-if($argv[1] === 'frestart')
+else
 {
-	$ec2Client -> rebootInstances(['InstanceIds' => $instanceIds,]);
+	header('HTTP', true, 403); // Forbidden direct access
 }
