@@ -4,6 +4,7 @@ $selfurl = htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8').'?cache=f
 if(isset($_GET['cache'])) { if($_GET['cache'] !== 'false') { header('Location:'.$selfurl); } }else { header('Location:'.$selfurl); }
 
 // Set Cookie lifetime and params.
+// REF https://www.php.net/manual/ja/features.session.security.management.php https://www.php.net/manual/ja/function.session-regenerate-id.php
 $lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
 session_set_cookie_params($lifetime_or_options);
 session_start();
@@ -42,7 +43,7 @@ if($locked === false) // Get EC2 Instance State
 }
 else
 {
-	$state = 'locked';
+	$state = 'Unavailable';
 }
 
 if($state === 'running' && $locked === false) // Get Palworld players list
@@ -65,7 +66,7 @@ if(array_key_exists('sendpw', $_POST)) // Send Login Password to Discord
 {
 	if($locked === false)
 	{
-		$_SESSION['timeunlock'] = time() + 10;
+		$_SESSION['timeunlock'] = time() + 20;
 		$_SESSION['password'] = bin2hex(random_bytes(12));
 		$message = json_encode(array('username' => 'Login Password', 'content' => $_SESSION['password']));
 		post2discord($message, $webhook);
@@ -80,19 +81,22 @@ if(array_key_exists('login', $_POST)) // Check Password and Login
 	{
 		if($_SESSION['password'] === $gotpw)
 		{
-			$_SESSION['timeunlock'] = time();
+			unset($_SESSION['timeunlock']);
 			$_SESSION['loggedin'] = true;
 		}
 		else
 		{
-			session_unset(); // session all reset if wrong password
+			$_SESSION['timeunlock'] = time() + 60;
+			unset($_SESSION['password']);
+			if(isset($_SESSION['loggedin'])) { unset($_SESSION['loggedin']); }
 		}
 		header('Location:'.$selfurl);
 	}
 	else
 	{
 		echo '<script>alert("Password is not sent!")</script>';
-		session_unset();
+		$_SESSION['timeunlock'] = time() + 20;
+		if(isset($_SESSION['loggedin'])) { unset($_SESSION['loggedin']); }
 	}
 }
 
