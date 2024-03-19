@@ -13,10 +13,10 @@ else
 {
 	header('Location:'.$selfurl);
 }
-
-session_set_cookie_params(900);
+$lifetime_or_options = ['lifetime' => 900, 'path' => htmlspecialchars($_SERVER['PHP_SELF']), 'secure' => true, 'httponly' => true];
+$testparam = session_set_cookie_params($lifetime_or_options);
 session_start();
-
+echo $testparam;
 require_once __DIR__.'/../auth.php';
 
 require_once __DIR__.'/../PalRcon/src/Rcon.php';
