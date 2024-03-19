@@ -1,11 +1,11 @@
 <?php
-require_once __DIR__.'/../auth.php';
-
-require_once __DIR__.'/../PalRcon/src/Rcon.php';
-use Thedudeguy\Rcon;
+require_once __DIR__.'/../auth.php'; // Params for RCON, AWS, and Discord.
+// Composer
+require_once __DIR__.'/../../../vendor/autoload.php';
+// RCON Library by https://github.com/thedudeguy/PHP-Minecraft-Rcon
+use Hodokami\Rcon;
 $rcon = new Rcon($host, $port, $password, $timeout);
-
-require_once __DIR__.'/../AWS/aws.phar';
+// AWS SDK for PHP
 use Aws\Ec2\Ec2Client;
 $ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-15', 'profile' => 'default']);
 if(isset($argv))
