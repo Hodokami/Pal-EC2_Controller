@@ -58,6 +58,7 @@ if(isset($_SESSION['stexpired'])) // status reset every 30mins
 {
 	if($_SESSION['stexpired'] <= time())
 	{
+		unset($_SESSION['stexpired']);
 		if(isset($_SESSION['loggedin'])) { unset($_SESSION['loggedin']); }
 		if(isset($_SESSION['password'])) { unset($_SESSION['password']); }
 	}
