@@ -33,7 +33,7 @@ function enhanced_session_regenerate_id()
 	session_id($new_session_id);
 	ini_set('session.use_strict_mode', 0);
 	session_start();
-	ini_set('session.use_strict_mode', 1);
+	@ini_set('session.use_strict_mode', 1);
 	unset($_SESSION['destroyed']);
 	unset($_SESSION['new_session_id']);
 }
