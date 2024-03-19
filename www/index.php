@@ -81,7 +81,7 @@ if(array_key_exists('sendpw', $_POST))
 
 if(array_key_exists('login', $_POST))
 {
-	$gotpw = htmlspecialchars(strip_tags($_POST['password']), ENT_QUOTES, 'UTF-8'); // XSS対策
+	$gotpw = htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8'); // XSS対策
 	if(isset($_SESSION['password']))
 	{
 		if($_SESSION['password'] === $gotpw)
