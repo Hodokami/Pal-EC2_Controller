@@ -1,16 +1,17 @@
 <?php
 // やりたいこと
 // セッション有効期限
+$selfurl = htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8').'?cache=false';
 if(isset($_GET['cache'])) // Avoid KUSANAGI fcache
 {
 	if($_GET['cache'] !== 'false')
 	{
-		header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+		header('Location:'.$selfurl);
 	}
 }
 else
 {
-	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+	header('Location:'.$selfurl);
 }
 
 session_set_cookie_params(900);
@@ -57,7 +58,7 @@ if($state === 'running' && $locked === false) // Get Players List
 	{
 		$info = $rcon->sendCommand("info");
 		$playersraw = $rcon->sendCommand("showplayers");
-		$players = array_chunk(preg_split("/[\s,]+/", htmlspecialchars( $playersraw, ENT_QUOTES)),3);
+		$players = array_chunk(preg_split("/[\s,]+/", htmlspecialchars($playersraw, ENT_QUOTES, 'UTF-8')),3);
 		$rcon->disconnect();
 	}
 	else
@@ -76,7 +77,7 @@ if(array_key_exists('sendpw', $_POST))
 		$message = json_encode(array('username' => 'Login Password', 'content' => $_SESSION['password']));
 		post2discord($message, $webhook);
 	}
-	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+	header('Location:'.$selfurl);
 }
 
 if(array_key_exists('login', $_POST))
@@ -93,7 +94,7 @@ if(array_key_exists('login', $_POST))
 		{
 			session_unset(); // passwordが間違った時点ですべてリセット
 		}
-		header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+		header('Location:'.$selfurl);
 	}
 	else
 	{
@@ -113,7 +114,7 @@ if(array_key_exists('start', $_POST))
 			exec($exec);
 		}
 	}
-	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+	header('Location:'.$selfurl);
 }
 
 if(array_key_exists('stop', $_POST))
@@ -127,7 +128,7 @@ if(array_key_exists('stop', $_POST))
 			exec($exec);
 		}
 	}
-	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+	header('Location:'.$selfurl);
 }
 
 if(array_key_exists('frestart', $_POST))
@@ -141,7 +142,7 @@ if(array_key_exists('frestart', $_POST))
 			exec($exec);
 		}
 	}
-	header('Location:'.$_SERVER['PHP_SELF'].'?cache=false');
+	header('Location:'.$selfurl);
 }
 ?>
 <!DOCTYPE html>
