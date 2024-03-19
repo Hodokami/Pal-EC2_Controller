@@ -41,17 +41,18 @@ $lifetime_or_options = ['lifetime' => 3600, 'path' => htmlspecialchars($_SERVER[
 session_set_cookie_params($lifetime_or_options);
 ini_set('session.use_strict_mode', 1);
 enhanced_session_start();
-if(isset($_SESSION['idexpired'])) // generate new session id every 15mins
+// generate new session id every 15mins, BUT... for some reason session gets reset. For that, id renew interval is lomg.
+if(isset($_SESSION['idexpired']))
 {
 	if($_SESSION['idexpired'] <= time())
 	{
 		enhanced_session_regenerate_id();
-		$_SESSION['idexpired'] = time() + 900;
+		$_SESSION['idexpired'] = time() + 3000;
 	}
 }
 else
 {
-	$_SESSION['idexpired'] = time() + 900;
+	$_SESSION['idexpired'] = time() + 3000;
 }
 if(isset($_SESSION['stexpired'])) // status reset every 30mins
 {
