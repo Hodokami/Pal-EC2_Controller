@@ -1,4 +1,6 @@
 <?php
+// やりたいこと
+// セッション有効期限
 if(isset($_GET['cache'])) // Avoid KUSANAGI fcache
 {
 	if($_GET['cache'] !== 'false')
