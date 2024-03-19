@@ -1,4 +1,5 @@
 <?php
+header('HTTP', true, 403); // Forbidden direct access
 require_once __DIR__.'/../auth.php';
 
 require_once __DIR__.'/../PalRcon/src/Rcon.php';
