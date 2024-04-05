@@ -1,4 +1,5 @@
 <?php
+error_reporting(-1);
 // Set query params for avoid KUSANAGI fcache.
 $selfurl = htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8').'?cache=false';
 if(isset($_GET['cache'])) { if($_GET['cache'] !== 'false') { header('Location:'.$selfurl); } }else { header('Location:'.$selfurl); }
@@ -72,16 +73,19 @@ else
 	$_SESSION['stexpired'] = time() + 1800;
 }
 
-require_once __DIR__.'/../auth.php'; // Params for RCON, AWS, and Discord.
+require_once __DIR__.'/../../auth.php'; // Params for RCON, AWS, and Discord.
 
 // Composer
-require_once __DIR__.'/../../../vendor/autoload.php';
+require_once __DIR__.'/../../vendor/autoload.php';
 // RCON Library by https://github.com/thedudeguy/PHP-Minecraft-Rcon
 use Hodokami\Rcon;
 $rcon = new Rcon($host, $port, $password, $timeout);
 // AWS SDK for PHP
+use Aws\Credentials\CredentialProvider;
+$provider = CredentialProvider::ini('default', __DIR__.'/../../credentials.ini');
+$provider = CredentialProvider::memoize($provider);
 use Aws\Ec2\Ec2Client;
-$ec2Client = new Aws\Ec2\Ec2Client(['region' => $region, 'version' => '2016-11-15', 'profile' => 'default']);
+$ec2Client = new Ec2Client(['region' => $region, 'version' => '2016-11-15', 'credentials' => $provider]);
 
 function post2discord($post, $url) // Post to Discord Werhook
 {
@@ -101,7 +105,7 @@ if($locked === false) // Get EC2 Instance State
 {
 	$result = $ec2Client -> describeInstanceStatus(['IncludeAllInstances' => true, 'InstanceIds' => $instanceIds,]);
 	$state = $result['InstanceStatuses'][0]['InstanceState']['Name'];
-	if(!isset($state)){$state = 'locked';}
+	if(!isset($state)){$state = 'Unavailable';}
 }
 else
 {
