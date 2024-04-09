@@ -92,10 +92,13 @@ $ec2Client = new Ec2Client(['region' => $region, 'version' => '2016-11-15', 'pro
 function post2discord($post, $url) // Post to Discord Werhook
 {
 	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_POST, TRUE);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Accept-Charset: UTF-8'));
+	$opt = array(
+		CURLOPT_URL => $url,
+		CURLOPT_POST => true,
+		CURLOPT_POSTFIELDS => $post,
+		CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept-Charset: UTF-8')
+	);
+	curl_setopt_array($ch, $opt);
 	curl_exec($ch);
 	curl_close($ch);
 }
