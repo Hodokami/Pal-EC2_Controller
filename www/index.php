@@ -119,18 +119,39 @@ else
 
 if($state === 'running' && $locked === false) // Get Palworld players list
 {
-	if (@$rcon->connect()) // not Display fsock ERROR
-	{
-		$info = $rcon->sendCommand("info");
-		$playersraw = $rcon->sendCommand("showplayers");
-		$players = array_chunk(preg_split("/[\s,]+/", htmlspecialchars($playersraw, ENT_QUOTES, 'UTF-8')),3);
-		$rcon->disconnect();
-	}
-	else
-	{
-		$players = array('ignore', 'Timeout.');
-		$rcon->disconnect();
-	}
+	$ch = curl_init();
+	$opt = array(
+		CURLOPT_URL => 'http://palworld01.aws.tellaresdo.com:8212/v1/api/info',
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_ENCODING => '',
+		CURLOPT_MAXREDIRS => 10,
+		CURLOPT_TIMEOUT => 0,
+		CURLOPT_FOLLOWLOCATION => true,
+		CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		CURLOPT_SSL_VERIFYPEER => false,
+		CURLOPT_CUSTOMREQUEST => 'GET',
+		CURLOPT_HTTPHEADER => array('Accept: application/json', 'Authorization: Basic YWRtaW46Q3g2VFFaQTZoOVRmeldKeWY1aHU0TG1xQWQ2QTl0')
+	);
+	curl_setopt_array($ch, $opt);
+	$info = json_decode(curl_exec($ch));
+	curl_close($ch);
+
+	$ch = curl_init();
+	$opt = array(
+		CURLOPT_URL => 'http://palworld01.aws.tellaresdo.com:8212/v1/api/players',
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_ENCODING => '',
+		CURLOPT_MAXREDIRS => 10,
+		CURLOPT_TIMEOUT => 0,
+		CURLOPT_FOLLOWLOCATION => true,
+		CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		CURLOPT_SSL_VERIFYPEER => false,
+		CURLOPT_CUSTOMREQUEST => 'GET',
+		CURLOPT_HTTPHEADER => array('Accept: application/json', 'Authorization: Basic YWRtaW46Q3g2VFFaQTZoOVRmeldKeWY1aHU0TG1xQWQ2QTl0')
+	);
+	curl_setopt_array($ch, $opt);
+	$players = json_decode(curl_exec($ch));
+	curl_close($ch);
 }
 
 if(array_key_exists('sendpw', $_POST)) // Send Login Password to Discord
@@ -235,12 +256,13 @@ if(array_key_exists('frestart', $_POST)) // Restart EC2 Instance
 		</p>
 		<?php
 		if($state === 'running' && $locked === false){
-			echo '<p>'.$info.'</p>';
+			echo '<p>Servername: '.$info->servername.'</p>';
+			echo '<p>Version: '.$info->version.'</p>';
+			echo '<p>Description: '.$info->description.'</p>';
 			echo '<p>Online Players:<br>';
-			foreach($players as $key => $value)
+			foreach($players->players as $key => $value)
 			{
-				if($key === 0) { continue; }
-				echo $value[0] . '<br>';
+				echo $value->name.'<br>';
 			}
 			echo '</p>';
 		}
